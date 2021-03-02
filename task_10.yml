@@ -1,4 +1,63 @@
 - hosts: backend
   tasks:
-          - debug:
-                  msg: "hiii"
+    - name: Creating a repo for Docker
+      yum_repository:
+            name: "docker_repo"
+            description: "Repo for docker"
+            baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+            gpgcheck: no
+
+    - name: Downloading docker package
+      package:
+            name: "docker-ce-18.09.1-3.el7.x86_64"
+            state: present
+            skip_broken: yes
+
+    - name: starting docker services
+      service:
+            name: "docker"
+            state: started
+            enabled : yes
+
+    - name: downloading python libraries for docker
+      pip:
+            name: "docker"
+
+    - name: Creating a directory to save  websites
+      file:
+            path: /webws
+            state: directory
+
+    - name: copy websites into the directory
+      copy:
+            content: "Hiii from ARTH - School of Technologies"
+            dest: "/webws/index.html"
+
+    - name: pulling docker httpd image from hub
+      docker_image:
+            name: httpd
+            source: pull
+
+    - name: creating a docker container         
+      docker_container:
+            name: "web-server"
+            image: httpd
+            exposed_ports: "80"
+            volumes: "/webws/:/usr/local/apache2/htdocs/"
+            ports: "1234:80"
+            state: started
+
+    - name: creating a firewall rule
+      firewalld:
+            port: 1234/tcp
+            immediate: yes
+            permanent: yes
+            state: enabled
+
+    - name: setting http rule in the firewall        
+      firewalld:
+            service: http
+            state: enabled
+            permanent: yes
+
+
